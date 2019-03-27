@@ -1,4 +1,5 @@
 # Echo Chat
+[![Build Status](https://travis-ci.org/rmzelnick/echo-chat.svg?branch=master)](https://travis-ci.org/rmzelnick/echo-chat)
 
 A TCP server-client chat that echos messages implemented in ANSI C licensed
 under the permissive MIT license.
