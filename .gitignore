@@ -1,7 +1,8 @@
 *.o
 *.sh.log
 *.sh.trs
-addrbook
+server
+client
 tests/test1
 tests/test2
 tests/test3
