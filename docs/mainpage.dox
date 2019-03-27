@@ -1,0 +1,100 @@
+/*! \mainpage notitle
+ *  \section echochat Echo Chat
+ *  
+ *  A TCP server-client chat implementation in ANSI C licensed under the
+ *  permissive MIT license.
+ *
+ *  \section getting_started Getting Started
+ *
+ *  These instructions will get you a copy of the project up and running on
+ *  your local machine for development and testing purposes. See deployment for
+ *  notes on how to deploy the project on a live system.
+ *
+ *  \subsection prerequisites Prerequisites
+ *
+ *  In order to be able to install Echo Chat you will need the following
+ *  software: Make, Autoconf, Automake, GCC, and optionally Doxygen if you wish
+ *  to generate documentation. If you're using a Windows system you may need to
+ *  install cygwin and use its package manager to install the aforementioned
+ *  tools.
+ *
+ *  \subsection install Installing
+ *
+ *  The installation process is fairly simple once the prerequisites tools have
+ *  been acquired. The first step is to generate a configure script and run it.
+ *
+ *  \code{.sh}
+ *  $ ./bootstrap.sh
+ *  $ ./configure
+ *  \endcode
+ *
+ *  The next step is to build and install the software using make,
+ *
+ *  \code{.sh}
+ *  $ make
+ *  $ make install
+ *  \endcode
+ *
+ *  \section testing Running the tests
+ *
+ *  Echo chat has three test cases in its test unit. In order to run the tests
+ *  you may run the Makefile's check target,
+ *
+ *  \subsection end_to_end_tests Break down into end to end tests
+ *
+ *  Tests one and two checks for receiving and sending information between tcp
+ *  contexts. The third test checks for correctness of a Bag array
+ *  implementation.
+ *
+ *  \section deployment Deployment
+ *
+ *  In order to get addrbook running with your username, password, and separate
+ *  file make sure to follow the pattern in credentials.txt
+ *
+ *  \code{.sh}
+ *  $ ./test/test1
+ *  $ ./test/test2
+ *  $ ./test/test3
+ *  \endcode
+ *
+ *  \section built_with Built with
+ *
+ *  <ul>
+ *    <li><a href="https://gcc.gnu.org/">GNU Compiler Collection</a> - ANSI C
+ *    compiler.</li>
+ *    <li><a href="https://www.gnu.org/software/make/">GNU Make</a> - a tool
+ *    which controls the generation of executables and other non-source files
+ *    of a program from the program's source files.</li>
+ *    <li><a href="https://www.gnu.org/software/autoconf/">GNU Autoconf</a> -
+ *    an extensible package of M4 macros that produce shell scripts to
+ *    automatically configure software source code packages.</li>
+ *    <li><a href="https://www.gnu.org/software/automake/">GNU Automake</a> - a
+ *    tool for automatically generating Makefile.in files compliant with the
+ *    GNU Coding Standards.</li>
+ *    <li><a href="http://www.doxygen.nl/">Doxygen</a> - de facto standard tool
+ *    for generating documentation from annotated C++ sources, but it also
+ *    supports other popular programming languages such as C, Objective-C, C#,
+ *    PHP, Java, Python, IDL (Corba, Microsoft, and UNO/OpenOffice flavors),
+ *    Fortran, VHDL, Tcl, and to some extent D.</li>
+ *  </ul>
+ *
+ *  \section contributing Contributing
+ *
+ *  Please read <a href="contributing.html">CONTRIBUTING</a> for details on
+ *  our code of conduct, and the process for submitting pull requests to us.
+ *
+ *  \section versioning Versioning
+ *
+ *  We use <a href="http://semver.org">SemVer</a> for versioning. For the
+ *  versions available, see the <a href="https://github.com/rmzelnick/echo-chat/tags">tags on this repository</a>.
+ *
+ *  \section authors Authors
+ *
+ *  <ul>
+ *    <li><b>Rimack Zelnick</b> - <i>Initial work</i> - <a href="https://github.com/rmzelnick">rmzelnick</a></li>
+ *  </ul>
+ *
+ *  \section license License
+ *
+ *  This project is licensed under the MIT License - see the <a href="license.html">LICENSE</a> file for details
+ */
