@@ -1,6 +1,8 @@
 #include "tcpcontext.h"
 #include <errno.h>
 
+int tcp_context_errno;
+
 void tcp_context_perror( const char *s )
 {
     errno = tcp_context_errno;

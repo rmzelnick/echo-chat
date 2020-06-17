@@ -8,8 +8,7 @@
 #include "tcpcontext.h"
 #define MAX_LENGTH 64
 
-extern int echo_client_context_errno;
-int echo_client_context_errno; /*!< Contains error codes for client context operations */
+extern int echo_client_context_errno; /*!< Contains error codes for client context operations */
 
 /*! Echo client context */
 typedef struct

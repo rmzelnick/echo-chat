@@ -14,8 +14,7 @@
 #include <unistd.h>
 #include <netdb.h>
 
-extern int tcp_context_errno;
-int tcp_context_errno; /*!< Contains error codes for tcp context operations */
+extern int tcp_context_errno; /*!< Contains error codes for tcp context operations */
 
 /*! TCP context for client-server communications */
 typedef struct

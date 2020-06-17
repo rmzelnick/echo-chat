@@ -3,6 +3,8 @@
 #include <errno.h>
 #include <stdio.h>
 
+int bag_errno;
+
 static void signal_next( bag_array_t *bag );
 
 void bag_array_perror( const char *s )

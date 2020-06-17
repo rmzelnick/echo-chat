@@ -4,6 +4,8 @@
 static int context_cmp( const void *a, const void *b );
 static int uname_cmp( const void *a, const void *b );
 
+int echo_server_context_errno;
+
 void echo_server_context_perror( const char *s )
 {
     if( echo_server_context_errno == EDUPLICATE )

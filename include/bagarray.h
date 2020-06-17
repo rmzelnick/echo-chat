@@ -9,8 +9,7 @@
 #include <pthread.h>
 #define ENOTFOUND 1000
 
-extern int bag_errno;
-int bag_errno; /*!< Contains the error code for bag array operations */
+extern int bag_errno; /*!< Contains the error code for bag array operations */
 
 /*! Implementation of Bag ADT using arrays. */
 typedef struct

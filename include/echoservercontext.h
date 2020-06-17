@@ -10,8 +10,7 @@
 #include "echoclientcontext.h"
 #define EDUPLICATE 14321
 
-extern int echo_server_context_errno;
-int echo_server_context_errno; /*!< Contains error codes for server context operations */
+extern int echo_server_context_errno; /*!< Contains error codes for server context operations */
 
 /*! Echo server context */
 typedef struct

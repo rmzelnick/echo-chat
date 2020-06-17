@@ -2,6 +2,8 @@
 #include <errno.h>
 #include "echoclientcontext.h"
 
+int echo_client_context_errno;
+
 void echo_client_context_perror( const char *s )
 {
     errno = echo_client_context_errno;
