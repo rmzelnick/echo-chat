@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <pthread.h>
+#include <sys/types.h>
 #define ENOTFOUND 1000
 
 extern int bag_errno; /*!< Contains the error code for bag array operations */
@@ -17,12 +18,6 @@ typedef struct
     size_t b_capacity;  /*!< bag capacity */
     void **b_array;     /*!< pointer to array */
     size_t b_size;      /*!< bag size */
-
-    volatile int b_nwrites;     /*!< Number of write mutex */
-    volatile int b_nreads;      /*!< Number of read mutex */
-    pthread_cond_t b_reader_cv; /*!< Reader mutex */
-    pthread_cond_t b_writer_cv; /*!< Writer mutex */
-    pthread_mutex_t b_lock;     /*!< Mutex lock */
 } bag_array_t;
 
 /*! \fn void bag_array_perror( const char *s )
