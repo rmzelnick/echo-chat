@@ -16,6 +16,7 @@ int main( int argc, char *argv[ ] )
     echo_client_context_t *client;
     tcp_context_t *ctx;
     pthread_t thread;
+    int err;
 
     if( argc != 4 )
     {
@@ -32,22 +33,27 @@ int main( int argc, char *argv[ ] )
         return EXIT_FAILURE;
     }
 
-    if( ( ctx = tcp_context_create( ) ) == NULL )
+    if( ( ctx = tcp_context_create( &err ) ) == NULL )
     {
-        tcp_context_perror( "tcp_context_create" );
+        char buf[ 256 ];
+        tcp_context_strerror( err, buf, 256 );
+        fprintf( stderr, "tcp_context_create: %s.\n", buf );
         return EXIT_FAILURE;
     }
 
     if( tcp_context_connect( ctx, argv[ HOSTNAME ],
-                atoi( argv[ PORT ] ) ) == -1 )
+                atoi( argv[ PORT ] ), &err ) == -1 )
     {
-        tcp_context_perror( "tcp_context_connect" );
+        char buf[ 256 ];
+        tcp_context_strerror( err, buf, 256 );
+        fprintf( stderr, "tcp_context_connect: %s.\n", buf );
         return EXIT_FAILURE;
     }
 
-    tcp_context_send( ctx, argv[ USERNAME ], strlen( argv[ USERNAME ] ) );
+    tcp_context_send( ctx, argv[ USERNAME ], strlen( argv[ USERNAME ] ),
+            &err );
 
-    if( tcp_context_recv( ctx, buffer, 256 ) > 0 )
+    if( tcp_context_recv( ctx, buffer, 256, &err ) > 0 )
     {
         if( strcmp( buffer, "FAILED" ) == 0 )
         {
@@ -56,18 +62,20 @@ int main( int argc, char *argv[ ] )
         }
     }
 
-    client = echo_client_context_create( ctx, argv[ USERNAME ] );
+    client = echo_client_context_create( ctx, argv[ USERNAME ], &err );
 
     if( client == NULL )
     {
-        echo_client_context_perror( "echo_client_context_create" );
+        char buf[ 256 ];
+        tcp_context_strerror( err, buf, 256 );
+        fprintf( stderr, "echo_client_context_create: %s.\n", buf );
         tcp_context_destroy( ctx );
         return EXIT_FAILURE;
     }
 
-    errno = pthread_create( &thread, NULL, read_thread, client );
+    err = pthread_create( &thread, NULL, read_thread, client );
 
-    if( errno != 0 )
+    if( err != 0 )
     {
         perror( "pthread_create" );
         echo_client_context_destroy( client );
@@ -83,7 +91,7 @@ int main( int argc, char *argv[ ] )
 
         if( !feof( stdin ) )
         {
-            tcp_context_send( ctx, buffer, strlen( buffer ) );
+            tcp_context_send( ctx, buffer, strlen( buffer ), &err );
         }
     }
 
@@ -98,12 +106,13 @@ void *read_thread( void *arg )
     echo_client_context_t *client;
     char buffer[ 4096 ];
     ssize_t bytes;
+    int err;
 
     pthread_detach( pthread_self( ) );
     client = ( echo_client_context_t* )arg;
 
-    while( ( bytes = tcp_context_recv( client->eec_tcp, buffer, 4096 ) )
-            > 0 )
+    while( ( bytes = tcp_context_recv( client->eec_tcp, buffer, 4096,
+                    &err ) ) > 0 )
     {
         fputs( buffer, logfile );
         fflush( logfile );
