@@ -6,6 +6,7 @@
 
 #define BACKLOG 1000
 
+static pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
 static void *accept_thread( void *arg );
 static void *connex_thread( void *arg );
 FILE *logfile;
@@ -22,6 +23,7 @@ int main( int argc, char *argv[ ] )
     tcp_context_t *ctx;
     pthread_t thread;
     size_t i;
+    int err;
 
     if( argc != 2 )
     {
@@ -37,9 +39,11 @@ int main( int argc, char *argv[ ] )
 
     fprintf( logfile, "Creating server's tcp context... " );
 
-    if( ( ctx = tcp_context_create( ) ) == NULL )
+    if( ( ctx = tcp_context_create( &err ) ) == NULL )
     {
-        tcp_context_perror( "tcp_context_bind" );
+        char buf[ 256 ];
+        tcp_context_strerror( err, buf, 256 );
+        fprintf( stderr, "tcp_context_create: %s.\n", buf );
         fclose( logfile );
         return EXIT_FAILURE;
     }
@@ -47,9 +51,11 @@ int main( int argc, char *argv[ ] )
     fprintf( logfile,
             "DONE\nBinding server's tcp context to localhost... " );
 
-    if( tcp_context_bind( ctx, atoi( argv[ 1 ] ) ) == -1 )
+    if( tcp_context_bind( ctx, atoi( argv[ 1 ] ), &err ) == -1 )
     {
-        tcp_context_perror( "tcp_context_bind" );
+        char buf[ 256 ];
+        tcp_context_strerror( err, buf, 256 );
+        fprintf( stderr, "tcp_context_bind: %s.\n", buf );
         tcp_context_destroy( ctx );
         fclose( logfile );
         return EXIT_FAILURE;
@@ -57,20 +63,24 @@ int main( int argc, char *argv[ ] )
 
     fprintf( logfile, "DONE\nListening for incoming connections... " );
 
-    if( tcp_context_listen( ctx, BACKLOG ) == -1 )
+    if( tcp_context_listen( ctx, BACKLOG, &err ) == -1 )
     {
-        tcp_context_perror( "tcp_context_listen" );
+        char buf[ 256 ];
+        tcp_context_strerror( err, buf, 256 );
+        fprintf( stderr, "tcp_context_listen: %s.\n", buf );
         tcp_context_destroy( ctx );
         fclose( logfile );
         return EXIT_FAILURE;
     }
 
     fprintf( logfile, "DONE\nCreating echo server context... " );
-    server = echo_server_context_create( ctx );
+    server = echo_server_context_create( ctx, &err );
 
     if( server == NULL )
     {
-        echo_server_context_perror( "echo_server_context_create" );
+        char buf[ 256 ];
+        tcp_context_strerror( err, buf, 256 );
+        fprintf( stderr, "echo_server_context_create: %s.\n", buf );
         fprintf( logfile, "FAILED\n" );
         tcp_context_destroy( ctx );
         fclose( logfile );
@@ -91,12 +101,17 @@ int main( int argc, char *argv[ ] )
     fprintf( logfile, "DONE\n" );
     getchar( );
 
+    pthread_mutex_lock( &g_lock );
+
     for( i = 0; i < server->esc_bag->b_size; i++ )
     {
-        echo_client_context_destroy( bag_array_get( server->esc_bag, i ) );
+        echo_client_context_destroy( bag_array_get( server->esc_bag, i,
+                    &err ) );
     }
 
     echo_server_context_destroy( server );
+    pthread_mutex_unlock( &g_lock );
+
     fclose( logfile );
 
     return EXIT_SUCCESS;
@@ -110,44 +125,47 @@ void *accept_thread( void *arg )
     char username[ MAX_LENGTH ];
     tcp_context_t *ctx;
     pthread_t thread;
+    int err;
 
     pthread_detach( pthread_self( ) );
     server = ( echo_server_context_t* )arg;
 
     while( 1 )
     {
-        ctx = tcp_context_accept( server->esc_tcp );
+        ctx = tcp_context_accept( server->esc_tcp, &err );
+
         fprintf( logfile, "Accepting incoming connection... " );
 
         if( ctx != NULL )
         {
             memset( username, 0, MAX_LENGTH );
-            tcp_context_recv( ctx, username, MAX_LENGTH );
-            client = echo_client_context_create( ctx, username );
+            tcp_context_recv( ctx, username, MAX_LENGTH, &err );
+            client = echo_client_context_create( ctx, username, &err );
 
             if( client != NULL )
             {
+                int tmp;
+
+                pthread_mutex_lock( &g_lock );
                 args.a_server = server;
                 args.a_client = client;
+                tmp = echo_server_context_insert( server, client, &err );
+                pthread_mutex_unlock( &g_lock );
 
-                if( echo_server_context_insert( server, client ) == -1 )
+                if( tmp == -1 )
                 {
-                    if( echo_server_context_errno == EDUPLICATE )
+                    if( err == EDUPLICATE )
                     {
-                        tcp_context_send( client->eec_tcp, "FAILED", 7 );
-                        echo_client_context_destroy( client );
-                        fprintf( logfile, "FAILED\n" );
-                        continue;
+                        tcp_context_send( client->eec_tcp, "FAILED", 7,
+                                &err );
                     }
-                    else
-                    {
-                        fprintf( logfile, "FAILED\n" );
-                        echo_client_context_destroy( client );
-                        continue;
-                    }
+
+                    echo_client_context_destroy( client );
+                    fprintf( logfile, "FAILED\n" );
+                    continue;
                 }
 
-                tcp_context_send( client->eec_tcp, "DONE", 5 );
+                tcp_context_send( client->eec_tcp, "DONE", 5, &err );
                 pthread_create( &thread, NULL, connex_thread, &args );
                 fprintf( logfile, "DONE\n" );
             }
@@ -172,27 +190,39 @@ void *connex_thread( void *arg )
     echo_server_context_t *server;
     echo_client_context_t *client;
     ssize_t bytes;
+    int err;
 
-    pthread_detach( pthread_self( ) );
+    pthread_mutex_lock( &g_lock );
     args = ( struct argument* )arg;
     server = args->a_server;
     client = args->a_client;
+    pthread_mutex_unlock( &g_lock );
 
     sprintf( message, "%s joined\n", client->eec_uname );
-    echo_server_context_sendall( server, message, strlen( message ) );
+
+    pthread_mutex_lock( &g_lock );
+    echo_server_context_sendall( server, message, strlen( message ), &err );
+    pthread_mutex_unlock( &g_lock );
 
     while( ( bytes = tcp_context_recv( client->eec_tcp,
-                    buffer, 2048 ) ) > 0 )
+                    buffer, 2048, &err ) ) > 0 )
     {
         sprintf( message, "%s says:\n%s\n", client->eec_uname, buffer );
-        echo_server_context_sendall( server, message, strlen( message ) );
+        pthread_mutex_lock( &g_lock );
+        echo_server_context_sendall( server, message, strlen( message ),
+                &err );
+        pthread_mutex_unlock( &g_lock );
         memset( buffer, 0, 2048 );
     }
 
     sprintf( message, "%s left\n", client->eec_uname );
-    echo_server_context_sendall( server, message, strlen( message ) );
 
-    echo_server_context_remove( server, client );
+    pthread_mutex_lock( &g_lock );
+
+    echo_server_context_remove( server, client, &err );
+    echo_server_context_sendall( server, message, strlen( message ), &err );
+    pthread_mutex_unlock( &g_lock );
+
     echo_client_context_destroy( client );
 
     return NULL;
