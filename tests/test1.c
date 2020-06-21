@@ -14,17 +14,18 @@ int main( void )
     char buffer[ 256 ];
     pthread_t thread;
     ssize_t bytes;
+    int err;
 
-    assert( ( server_ctx = tcp_context_create( ) ) != NULL );
-    assert( tcp_context_bind( server_ctx, PORT ) != -1 );
-    assert( tcp_context_listen( server_ctx, BACKLOG ) != -1 );
+    assert( ( server_ctx = tcp_context_create( &err ) ) != NULL );
+    assert( tcp_context_bind( server_ctx, PORT, &err ) != -1 );
+    assert( tcp_context_listen( server_ctx, BACKLOG, &err ) != -1 );
 
     pthread_create( &thread, NULL, connection_thread, NULL );
 
-    client_ctx = tcp_context_accept( server_ctx );
+    client_ctx = tcp_context_accept( server_ctx, &err );
     assert( client_ctx != NULL );
 
-    bytes = tcp_context_recv( client_ctx, buffer, 256 );
+    bytes = tcp_context_recv( client_ctx, buffer, 256, &err );
 
     assert( !strncmp( buffer, "hello, world", bytes ) );
 
@@ -38,12 +39,13 @@ void *connection_thread( void *arg )
 {
     tcp_context_t *client_ctx;
     char buffer[ ] = "hello, world";
+    int err;
 
     pthread_detach( pthread_self( ) );
-    client_ctx = tcp_context_create( );
+    client_ctx = tcp_context_create( &err );
 
-    tcp_context_connect( client_ctx, "localhost", PORT );
-    tcp_context_send( client_ctx, buffer, strlen( buffer ) );
+    tcp_context_connect( client_ctx, "localhost", PORT, &err );
+    tcp_context_send( client_ctx, buffer, strlen( buffer ), &err );
 
     return NULL;
 }

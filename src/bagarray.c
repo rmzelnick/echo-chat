@@ -3,28 +3,25 @@
 #include <errno.h>
 #include <stdio.h>
 
-int bag_errno;
-
-void bag_array_perror( const char *s )
+void bag_array_strerror( int errnum, char *buf, size_t buflen )
 {
-    if( bag_errno == ENOTFOUND )
+    if( errnum == ENOTFOUND )
     {
-        printf( "%s: Element not found.\n", s );
+        strcpy( buf, "Element not found" );
     }
     else
     {
-        errno = bag_errno;
-        perror( s );
+        strerror_r( errnum, buf, buflen );
     }
 }
 
-bag_array_t *bag_array_create( void )
+bag_array_t *bag_array_create( int *err )
 {
     bag_array_t *bag;
 
     if( ( bag = malloc( sizeof( bag_array_t ) ) ) == NULL )
     {
-        bag_errno = ENOMEM;
+        *err = ENOMEM;
         return NULL;
     }
 
@@ -33,49 +30,50 @@ bag_array_t *bag_array_create( void )
     return bag;
 }
 
-void *bag_array_get( bag_array_t *bag, size_t index )
+ssize_t bag_array_find_first( bag_array_t *bag, void *key, ssize_t *index,
+       int ( *cmp )( const void*, const void* ), int *err )
+{
+    ssize_t i, retval;
+
+    if( bag == NULL || key == NULL || index == NULL || cmp == NULL )
+    {
+        *err = EINVAL;
+        return -1;
+    }
+
+    retval = -1;
+
+    for( i = *index; i < bag->b_size; i++ )
+    {
+        if( cmp( key, bag->b_array[ i ] ) == 0 )
+        {
+            retval = i;
+            break;
+        }
+    }
+
+    if( i == bag->b_size )
+        *err = ENOTFOUND;
+
+    return retval;
+}
+
+void *bag_array_get( bag_array_t *bag, ssize_t index, int *err )
 {
     if( bag == NULL || index >= bag->b_size )
     {
-        bag_errno = EINVAL;
+        *err = EINVAL;
         return NULL;
     }
 
     return bag->b_array[ index ];
 }
 
-ssize_t bag_array_find_first( bag_array_t *bag, void *key, ssize_t *index,
-       int ( *cmp )( const void*, const void* ) )
-{
-    ssize_t i, retval;
-
-    if( bag == NULL || key == NULL || index == NULL || cmp == NULL )
-    {
-        bag_errno = EINVAL;
-        return -1;
-    }
-
-    bag_errno = ENOTFOUND;
-    retval = -1;
-
-    for( i = *index; i < ( ssize_t )bag->b_size; i++ )
-    {
-        if( cmp( key, bag->b_array[ i ] ) == 0 )
-        {
-            bag_errno = 0;
-            retval = i;
-            break;
-        }
-    }
-
-    return retval;
-}
-
-int bag_array_insert( bag_array_t *bag, void *element )
+int bag_array_insert( bag_array_t *bag, void *element, int *err )
 {
     if( bag == NULL || element == NULL )
     {
-        bag_errno = EINVAL;
+        *err = EINVAL;
         return -1;
     }
 
@@ -96,7 +94,7 @@ int bag_array_insert( bag_array_t *bag, void *element )
 
         if( tmp == NULL )
         {
-            bag_errno = ENOMEM;
+            *err = ENOMEM;
             return -1;
         }
 
@@ -109,13 +107,13 @@ int bag_array_insert( bag_array_t *bag, void *element )
     return 0;
 }
 
-void *bag_array_remove( bag_array_t *bag, size_t index )
+void *bag_array_remove( bag_array_t *bag, ssize_t index, int *err )
 {
     void *tmp;
 
     if( bag == NULL || index >= bag->b_size )
     {
-        bag_errno = EINVAL;
+        *err = EINVAL;
         return NULL;
     }
 

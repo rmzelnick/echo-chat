@@ -7,27 +7,27 @@ int main( void )
 {
     bag_array_t *bag;
     ssize_t from;
-    int *n, i, key;
+    int *n, i, key, err;
 
-    assert( ( bag = bag_array_create( ) ) != NULL );
+    assert( ( bag = bag_array_create( &err ) ) != NULL );
 
     for( i = 0; i < 1000; i++ )
     {
         n = malloc( sizeof( int ) );
         *n = 2 * i + 1;
 
-        bag_array_insert( bag, n );
+        bag_array_insert( bag, n, &err );
     }
 
-    assert( *( int* )bag_array_get( bag, 500 ) == 1001 );
+    assert( *( int* )bag_array_get( bag, 500, &err ) == 1001 );
 
     from = 0;
     key = 1001;
-    assert( bag_array_find_first( bag, &key, &from, cmp ) != -1 );
+    assert( bag_array_find_first( bag, &key, &from, cmp, &err ) != -1 );
 
     for( i = 0; i < 1000; i++ )
     {
-        free( bag_array_get( bag, i ) );
+        free( bag_array_get( bag, i, &err ) );
     }
 
     bag_array_destroy( bag );

@@ -2,28 +2,25 @@
 #include <errno.h>
 #include "echoclientcontext.h"
 
-int echo_client_context_errno;
-
-void echo_client_context_perror( const char *s )
+void echo_client_context_strerror( int errnum, char *buf, size_t buflen )
 {
-    errno = echo_client_context_errno;
-    perror( s );
+    strerror_r( errnum, buf, buflen );
 }
 
 echo_client_context_t *echo_client_context_create( tcp_context_t *ctx,
-        const char *uname )
+        const char *uname, int *err )
 {
     echo_client_context_t *client;
 
     if( ctx == NULL || uname == NULL )
     {
-        echo_client_context_errno = EINVAL;
+        *err = EINVAL;
         return NULL;
     }
 
     if( ( client = malloc( sizeof( echo_client_context_t ) ) ) == NULL )
     {
-        echo_client_context_errno = ENOMEM;
+        *err = ENOMEM;
         return NULL;
     }
 

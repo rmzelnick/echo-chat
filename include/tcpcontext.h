@@ -14,8 +14,6 @@
 #include <unistd.h>
 #include <netdb.h>
 
-extern int tcp_context_errno; /*!< Contains error codes for tcp context operations */
-
 /*! TCP context for client-server communications */
 typedef struct
 {
@@ -23,16 +21,19 @@ typedef struct
     int tc_socket;              /*!< TCP socket  */
 } tcp_context_t;
 
-/*! \fn void tcp_context_perror( const char *s )
- *  \brief Prints message error associated with TCP context.
- *  \param s The string describing the function where the error happened.
+/*! \fn void tcp_context_strerror( int errnum, char *buf, size_t buflen )
+ *  \brief Outputs message error associated with TCP context.
+ *  \param[in] errnum The error code number.
+ *  \param[out] buf The buffer that holds the error message.
+ *  \param[in] buflen The length of the buffer.
  */
-extern void tcp_context_perror( const char *s );
+extern void tcp_context_strerror( int errnum, char *buf, size_t buflen );
 
-/*! \fn tcp_context_t *tcp_context_create( void )
+/*! \fn tcp_context_t *tcp_context_create( int *err )
  *  \brief Creates a TCP connection context.
+ *  \param[out] err The error code returned in case of failure.
  *  \return On success a new context is returned. Otherwise NULL is returned
- *  and errno is set appropriately.
+ *  and err parameter is set appropriately.
  *  \exception ENOMEM Not enough memory to allocate a context.
  *  \exception EACCESS Permission to create context is denied.
  *  \exception EMFILE The per-process limit on the number of open file
@@ -40,15 +41,16 @@ extern void tcp_context_perror( const char *s );
  *  \exception ENFILE The system-wide limit on the total number of open
  *  files has been reached.
  */
-extern tcp_context_t *tcp_context_create( void );
+extern tcp_context_t *tcp_context_create( int *err );
 
-/*! \fn int *tcp_context_connect( tcp_context_t *ctx, const char *host, int port );
+/*! \fn int *tcp_context_connect( tcp_context_t *ctx, const char *host, int port, int *err )
  *  \brief Connects a context to a hostname and port number.
  *  \param[in] ctx The context to be connected.
  *  \param[in] host The target hostname for connection.
  *  \param[in] port The target port number for connection.
- *  \return On success zero is returned. Otherwise -1 is returned and errno
- *  is set appropriately.
+ *  \param[out] err The error code returned in case of failure.
+ *  \return On success zero is returned. Otherwise -1 is returned and err
+ *  parameter is set appropriately.
  *  \exception EADDRINUSE Local addresss already in use.
  *  \exception ECONNREFUSED No-one listening on the remote address.
  *  \exception EFAULT The socket structure address is outside the user's
@@ -57,14 +59,15 @@ extern tcp_context_t *tcp_context_create( void );
  *  \exception ETIMEDOUT Timeout while attempting connection.
  */
 extern int tcp_context_connect( tcp_context_t *ctx,
-        const char *host, int port );
+        const char *host, int port, int *err );
 
-/*! \fn int tcp_context_bind( tcp_context_t *ctx, int port )
+/*! \fn int tcp_context_bind( tcp_context_t *ctx, int port, int *err )
  *  \brief Binds a context to a port number.
  *  \param[in] ctx The context to be bound.
  *  \param[in] port The port number in which to bind the context.
+ *  \param[out] err The error code returned in case of failure.
  *  \return On success a socket is returned. Otherwise -1 is returned and
- *  errno is set appropriately.
+ *  err parameter is set appropriately.
  *  \exception EACCESS The address is protected, and the user is not
  *  superuser.
  *  \exception EADDRINUSE The given address is already in use.
@@ -74,23 +77,25 @@ extern int tcp_context_connect( tcp_context_t *ctx,
  *  currently in use.
  *  \exception EINVAL The socket is already bound to an address.
  */
-extern int tcp_context_bind( tcp_context_t *ctx, int port );
+extern int tcp_context_bind( tcp_context_t *ctx, int port, int *err );
 
-/*! \fn int tcp_context_listen( tcp_context_t *ctx, int backlog )
+/*! \fn int tcp_context_listen( tcp_context_t *ctx, int backlog, int *err )
  *  \brief Puts a context to listen for incoming connections.
  *  \param[in] ctx The context which listens.
  *  \param[in] backlog The maximum length to which the queue of pending
  *  connections may grow.
- *  \return On success zero is returned. Otherwise -1 is returned and errno
- *  is set appropriately.
+ *  \param[out] err The error code returned in case of failure.
+ *  \return On success zero is returned. Otherwise -1 is returned and err
+ *  parameter is set appropriately.
  */
-extern int tcp_context_listen( tcp_context_t *ctx, int backlog );
+extern int tcp_context_listen( tcp_context_t *ctx, int backlog, int *err );
 
-/*! \fn tcp_context_t *tcp_context_accept( const tcp_context_t *ctx )
+/*! \fn tcp_context_t *tcp_context_accept( const tcp_context_t *ctx, int *err )
  *  \brief Accepts an incoming connection.
  *  \param[in] ctx The server context.
+ *  \param[out] err The error code returned in case of failure.
  *  \return On success a new context of the incoming connection is returned.
- *  Otherwise NULL is returned and errno is set appropriately.
+ *  Otherwise NULL is returned and err parameter is set appropriately.
  *  \exception ECONNABORTED A connection has been aborted.
  *  \exception EINTR The system call was interrupted by a signal that was
  *  caught vefore a valid connection arrived.
@@ -101,15 +106,17 @@ extern int tcp_context_listen( tcp_context_t *ctx, int backlog );
  *  files has been reached.
  *  \exception EPERM Firewall rules forbid connection.
  */
-extern tcp_context_t *tcp_context_accept( const tcp_context_t *ctx );
+extern tcp_context_t *tcp_context_accept( const tcp_context_t *ctx,
+        int *err );
 
-/*! \fn ssize_t tcp_context_send( tcp_context_t *ctx, const char *buffer, size_t size )
+/*! \fn ssize_t tcp_context_send( tcp_context_t *ctx, const char *buffer, size_t size, int *err )
  *  \brief Sends a message to another TCP context.
  *  \param[in] ctx The context to which the message is sent.
  *  \param[in] buffer The message buffer.
  *  \param[in] size The size (in bytes) of the buffer.
+ *  \param[out] err The error code returned in case of failure.
  *  \return On success the total number of bytes sent is returned. Otherwise
- *  -1 is returned and errno is set appropriately.
+ *  -1 is returned and err parameter is set appropriately.
  *  \exception ECONNRESET Connection reset by peer.
  *  \exception EINTR A signal occurred before any data was transmitted.
  *  \exception ENOMEM No memory available.
@@ -118,15 +125,16 @@ extern tcp_context_t *tcp_context_accept( const tcp_context_t *ctx );
  *  \exception EPIPE The local context has been shutdown or destroyed.
  */
 extern ssize_t tcp_context_send( tcp_context_t *ctx, const char *buffer,
-        size_t size );
+        size_t size, int *err );
 
-/*! \fn ssize_t tcp_context_recv( tcp_context_t *ctx, char *buffer, size_t size )
+/*! \fn ssize_t tcp_context_recv( tcp_context_t *ctx, char *buffer, size_t size, int *err )
  *  \brief Receives a message from another TCP context.
  *  \param[in] ctx The context from which the message is received.
  *  \param[out] buffer The buffer containing the received message.
  *  \param[in] size Maximum size of buffer.
+ *  \param[out] err The error code returned in case of failure.
  *  \return On success the total number of bytes received is returned.
- *  Otherwise -1 is returned and errno is set appropriately.
+ *  Otherwise -1 is returned and err parameter is set appropriately.
  *  \exception ECONNRESET Connection reset by peer.
  *  \exception EINTR A signal occurred before any data was received.
  *  \exception ENOMEM No memory available.
@@ -135,7 +143,7 @@ extern ssize_t tcp_context_send( tcp_context_t *ctx, const char *buffer,
  *  \exception EPIPE The local context has been shutdown or destroyed.
  */
 extern ssize_t tcp_context_recv( tcp_context_t *ctx, char *buffer,
-        size_t size );
+        size_t size, int *err );
 
 /*! \fn void tcp_context_destroy( tcp_context_t *ctx )
  *  \brief Destroys a TCP context.
